@@ -4,7 +4,7 @@ I read the schemas and translate it into python code.
 
 How to use ?
 - Go to project root
-- in function `main`, change the name of the contract
+- in function `main` line 167, change the name of the contract that you want to parse
 - run, you should get a result like:
 
 ```py
@@ -162,7 +162,11 @@ def get_json_data(path: str) -> json:
 
 
 def main():
+    # CHANGE ME
+    # vvvvvvvvv
     name = "gov"
+    # ^^^^^^^^^
+    # CHANGE ME
 
     input_schema = f"contracts/{name}/schema/instantiate_msg.json"
     json_schema = get_json_data(input_schema)

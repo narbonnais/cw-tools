@@ -9,7 +9,7 @@ How to use ?
 
 ```py
 def instantiate_msg(proposal_deposit, quorum, snapshot_period: int, threshold, timelock_period: int, voting_period: int) -> str:
-        return {'instantiate': {'proposal_deposit': proposal_deposit, 'quorum': quorum, 'snapshot_period': snapshot_period, 'threshold': threshold, 'timelock_period': timelock_period, 'voting_period': voting_period}}
+        return {'proposal_deposit': proposal_deposit, 'quorum': quorum, 'snapshot_period': snapshot_period, 'threshold': threshold, 'timelock_period': timelock_period, 'voting_period': voting_period}
 
 def execute_receive_msg() -> str:
         return {'receive': {}}
@@ -83,13 +83,19 @@ class Message():
 
     def compile_body(self) -> str:
         res = "return "
-        res += "{'" + self.name + "': {"
+        if self.name == "instantiate":
+            res += "{"
+        else:
+            res += "{'" + self.name + "': {"
         for p in self.params:
             name = p.name
             # Create string
             res += f"'{name}': {name}, "
         res = res.strip(", ")
-        res += "}}"
+        if self.name == "instantiate":
+            res += "}"
+        else:
+            res += "}}"
         return res
 
     def compile(self) -> str:
@@ -98,8 +104,8 @@ class Message():
         prefix = ""
         if self.prefix:
             prefix = self.prefix + "_"
-        res = f"def {prefix}{self.name}_msg({params}) -> str:\n"
-        res += f"\t{body}\n"
+        res = f"\tdef {prefix}{self.name}_msg({params}) -> str:\n"
+        res += f"\t\t{body}\n"
 
         return res
 
@@ -112,7 +118,7 @@ def process_schema(schema, prefix: str):
     """
     Takes the json schema as input and returns the string that has to be written in the contract file
     """
-    if "anyOf" not in schema:
+    if "anyOf" not in schema and "oneOf" not in schema:
         # It's an instantiate message
         buffer_msg = Message("instantiate")
         if "properties" in schema:
@@ -132,7 +138,15 @@ def process_schema(schema, prefix: str):
                     buffer_msg.require_param(prop_name)
         print(buffer_msg.compile())
     else:
-        for msg in schema["anyOf"]:
+        msg_list = None
+        if "anyOf" in schema:
+            msg_list = schema["anyOf"]
+        elif "oneOf" in schema:
+            msg_list = schema["oneOf"]
+        else:
+            return
+
+        for msg in msg_list:
             msg_name = msg["required"][0]
             buffer_msg = Message(msg_name, prefix)
             msg_prop = msg["properties"][msg_name]
@@ -161,12 +175,30 @@ def get_json_data(path: str) -> json:
         return json_data
 
 
+def make_class_header(name: str) -> str:
+    class_name = name.title()
+    class_header = f"class {name.title()}(Contract):\n"
+    return class_header
+
+
+def make_class_init(name: str) -> str:
+    class_init = ""
+    class_init += f"\tdef __init__(self, name={name.title()}):\n"
+    class_init += f"\t\tsuper().__init__()\n"
+    return class_init
+
+
 def main():
-    # CHANGE ME
+    # CHANGE ME CASE SENSITIVE
+    # Name of the contract directory
     # vvvvvvvvv
-    name = "gov"
+    name = "pair"
     # ^^^^^^^^^
-    # CHANGE ME
+    # CHANGE ME CASE SENSITIVE
+
+    print(make_class_header(name))
+    print("\t# This has been generated automatically :)\n")
+    print(make_class_init(name))
 
     input_schema = f"contracts/{name}/schema/instantiate_msg.json"
     json_schema = get_json_data(input_schema)
@@ -177,6 +209,12 @@ def main():
     input_schema = f"contracts/{name}/schema/query_msg.json"
     json_schema = get_json_data(input_schema)
     process_schema(json_schema, "query")
+    try:
+        input_schema = f"contracts/{name}/schema/cw20_hook_msg.json"
+        json_schema = get_json_data(input_schema)
+        process_schema(json_schema, "cw20")
+    except:
+        pass
 
 
 if __name__ == "__main__":

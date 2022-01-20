@@ -1,4 +1,4 @@
-from sdk_wrapper.common_sdk import terra, Wallet, execute_contract, instantiate_contract
+from terra_sdk_wrapper.common_sdk import terra, Wallet, execute_contract, instantiate_contract
 
 
 class Contract:

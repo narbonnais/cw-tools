@@ -4,7 +4,7 @@ I read the schemas and translate it into python code.
 
 How to use ?
 - Go to project root
-- in function `main` line 167, change the name of the contract that you want to parse
+- in function `main` line 195, change the name of the contract that you want to parse
 - run, you should get a result like:
 
 ```py

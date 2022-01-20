@@ -104,7 +104,7 @@ class Message():
         prefix = ""
         if self.prefix:
             prefix = self.prefix + "_"
-        res = f"\tdef {prefix}{self.name}_msg({params}) -> str:\n"
+        res = f"\tdef {prefix}{self.name}_msg({params}):\n"
         res += f"\t\t{body}\n"
 
         return res

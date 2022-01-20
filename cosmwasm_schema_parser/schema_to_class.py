@@ -169,7 +169,7 @@ def make_class_init(name: str) -> str:
 def main():
     if len(sys.argv) < 2:
 	    print("usage: python3 schema_to_class.py ./terraswap/contracts/terraswap_token")
-	    print("commands list: python3 research.py -h")
+	    print("commands list: python3 schema_to_class.py -h")
 	    exit()
 
     path = sys.argv[1]
@@ -178,7 +178,7 @@ def main():
 
     if "-h" in arguments or "-help" in arguments:
         print("usage: python3 schema_to_class.py ./terraswap/contracts/terraswap_token")
-	print("commands list: python3 research.py -h")
+	print("commands list: python3 schema_to_class.py -h")
         exit()
 
     _name = path.split("/")

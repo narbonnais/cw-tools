@@ -183,7 +183,7 @@ def make_class_header(name: str) -> str:
 
 def make_class_init(name: str) -> str:
     class_init = ""
-    class_init += f"\tdef __init__(self, name={name.title()}):\n"
+    class_init += f"\tdef __init__(self, name='{name.title()}'):\n"
     class_init += f"\t\tsuper().__init__()\n"
     return class_init
 

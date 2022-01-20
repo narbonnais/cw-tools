@@ -1,27 +1,5 @@
-"""
-Hello, my job is to make easier the writing of each class for the contracts.
-I read the schemas and translate it into python code.
-
-How to use ?
-- Go to project root
-- in function `main` line 195, change the name of the contract that you want to parse
-- run, you should get a result like:
-
-```py
-def instantiate_msg(proposal_deposit, quorum, snapshot_period: int, threshold, timelock_period: int, voting_period: int) -> str:
-        return {'proposal_deposit': proposal_deposit, 'quorum': quorum, 'snapshot_period': snapshot_period, 'threshold': threshold, 'timelock_period': timelock_period, 'voting_period': voting_period}
-
-def execute_receive_msg() -> str:
-        return {'receive': {}}
-
-def execute_execute_poll_msgs_msg(poll_id: int) -> str:
-        return {'execute_poll_msgs': {'poll_id': poll_id}}
-```
-
-Now, create a class and copy & paste result
-"""
-
 import json
+import sys 
 
 type_match = {
     'string': 'str',
@@ -189,28 +167,42 @@ def make_class_init(name: str) -> str:
 
 
 def main():
-    # CHANGE ME CASE SENSITIVE
-    # Name of the contract directory
-    # vvvvvvvvv
-    name = "pair"
-    # ^^^^^^^^^
-    # CHANGE ME CASE SENSITIVE
+    if len(sys.argv) < 2:
+	    print("usage: python3 schema_to_class.py ./terraswap/contracts/terraswap_token")
+	    print("commands list: python3 research.py -h")
+	    exit()
+
+    path = sys.argv[1]
+
+    arguments = sys.argv
+
+    if "-h" in arguments or "-help" in arguments:
+        print("usage: python3 schema_to_class.py ./terraswap/contracts/terraswap_token")
+	print("commands list: python3 research.py -h")
+        exit()
+
+    _name = path.split("/")
+
+    _index_of_contract = _name.index("contracts")
+    _index_of_name = _index_of_contract + 1
+
+    name = _name[_index_of_name]
 
     print(make_class_header(name))
     print("\t# This has been generated automatically :)\n")
     print(make_class_init(name))
 
-    input_schema = f"contracts/{name}/schema/instantiate_msg.json"
+    input_schema = f"{path}/schema/instantiate_msg.json"
     json_schema = get_json_data(input_schema)
     process_schema(json_schema, "instantiate")
-    input_schema = f"contracts/{name}/schema/execute_msg.json"
+    input_schema = f"{path}/schema/execute_msg.json"
     json_schema = get_json_data(input_schema)
     process_schema(json_schema, "execute")
-    input_schema = f"contracts/{name}/schema/query_msg.json"
+    input_schema = f"{path}/schema/query_msg.json"
     json_schema = get_json_data(input_schema)
     process_schema(json_schema, "query")
     try:
-        input_schema = f"contracts/{name}/schema/cw20_hook_msg.json"
+        input_schema = f"{path}/schema/cw20_hook_msg.json"
         json_schema = get_json_data(input_schema)
         process_schema(json_schema, "cw20")
     except:

@@ -19,12 +19,6 @@ import chalk
 
 terra = LocalTerra()
 
-# Builtin wallets from LocalTerra
-deployer = terra.wallets["test1"]
-alice = terra.wallets["test2"]
-bob = terra.wallets["test3"]
-mallory = terra.wallets["test4"]
-
 #============================ SDK wrappers ============================#
 
 

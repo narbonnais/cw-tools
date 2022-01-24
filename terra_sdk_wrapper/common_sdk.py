@@ -74,8 +74,9 @@ def send(terra: LCDClient, sender: Wallet, to_address: str, amount=None) -> str:
     """Send coins"""
     send_msg = MsgSend(from_address=sender.key.acc_address,
                        to_address=to_address, amount=amount)
-    tx = sender.create_and_sign_tx(msgs=[send_msg], fee=StdFee(
-        1000000, "1000000uusd"), fee_denoms=['uusd', 'uluna', 'ukrw'])
+    # tx = sender.create_and_sign_tx(msgs=[send_msg], fee=StdFee(
+    #     1000000, "1000000uusd"), fee_denoms=['uusd', 'uluna', 'ukrw'])
+    tx = sender.create_and_sign_tx(msgs=[send_msg], gas_adjustment="1.5")
     result = terra.tx.broadcast(tx)
     return result
 

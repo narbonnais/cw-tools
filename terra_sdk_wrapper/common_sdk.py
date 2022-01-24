@@ -64,10 +64,16 @@ def execute_contract(terra: LCDClient, sender: Wallet, contract_address: str, ex
     """Execute a message"""
     execute = MsgExecuteContract(sender=sender.key.acc_address,
                                  contract=contract_address, execute_msg=execute_msg, coins=init_coins)
-    tx = sender.create_and_sign_tx(
-        msgs=[execute], fee=StdFee(10_000_000, "10000000uluna"))
-    result = terra.tx.broadcast(tx)
-    return result
+    # tx = sender.create_and_sign_tx(
+    #     msgs=[execute], fee=StdFee(10_000_000, "10000000uluna"))
+    try:
+        tx = sender.create_and_sign_tx(
+            msgs=[execute])
+        result = terra.tx.broadcast(tx)
+        return result
+    except Exception as e:
+        print(chalk.red(f"[!] Error executing {execute_msg}"))
+        print(e)
 
 
 def send(terra: LCDClient, sender: Wallet, to_address: str, amount=None) -> str:

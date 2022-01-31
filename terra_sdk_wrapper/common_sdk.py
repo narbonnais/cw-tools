@@ -1,6 +1,7 @@
 #============================ Imports ============================#
 
 from terra_sdk.client.localterra import LocalTerra, LCDClient
+from terra_sdk.client.localterra import Wallet
 from terra_sdk.util.contract import read_file_as_b64, get_code_id
 from terra_sdk.core.wasm import MsgStoreCode
 from terra_sdk.core.auth import StdFee
@@ -10,7 +11,6 @@ from terra_sdk.core.wasm import MsgExecuteContract
 from terra_sdk.core.coins import Coins
 from terra_sdk.core.bank import MsgSend
 from terra_sdk.core.coins import Coins
-from terra_sdk.client.localterra import Wallet
 import base64
 import json
 import chalk

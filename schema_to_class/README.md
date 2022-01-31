@@ -43,10 +43,12 @@ class Airdrop():
 Import and play:
 
 ```python
+from terra_sdk.client.localterra import LocalTerra
 from sdk_wrapper import Contract
 from airdrop import Airdrop
 
-aidrop_contract = Contract()
+terra = LocalTerra()
+aidrop_contract = Contract(terra)
 
 instantiate_msg = Airdrop.instantiate(anchor_token.address, gov_contract.address, alice.key.acc_address)
 aidrop_contract.instantiate(alice, instantiate_msg)

@@ -43,20 +43,26 @@ class Airdrop():
 Import and play:
 
 ```python
-from terra_sdk.client.localterra import LocalTerra
-from sdk_wrapper import Contract
+from sdk_wrapper import Contract, terra, store_contract
 from airdrop import Airdrop
 
-terra = LocalTerra()
-aidrop_contract = Contract(terra)
+# Contract holder (able to instantiate, execute, query)
+aidrop_contract = Contract()
 
+# Store the contract
+code_id = store_contract(terra, deployer, 'anchor_airdrop')
+
+# Instantiate the contract
 instantiate_msg = Airdrop.instantiate(anchor_token.address, gov_contract.address, alice.key.acc_address)
-aidrop_contract.instantiate(alice, instantiate_msg)
-# airdrop_contract.address = "terra1....."
+aidrop_contract.instantiate(alice, code_id, instantiate_msg)
+# Now has an address: airdrop_contract.address = "terra1....."
 
+# Execute update config
 update_config_msg = Airdrop.execute_update_config(bob.key.acc_address)
 aidrop_contract.execute(alice, update_config_msg)
 
+# Query config
 res = airdrop_contract.query(Airdrop.query_config())
 # res = "terra1....." (bob)
 ```
+

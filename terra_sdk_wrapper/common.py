@@ -84,7 +84,7 @@ def execute_contract(terra: LCDClient, sender: Wallet, contract_address: str, ex
         tx = sender.create_and_sign_tx(
             msgs=[execute])
         result = terra.tx.broadcast(tx)
-        print(chalk.green(f"[+] Success executiing {execute_msg}"))
+        print(chalk.green(f"[+] Success executing {execute_msg}"))
         return result
     except Exception as e:
         print(chalk.red(f"[!] Error executing {execute_msg}"))

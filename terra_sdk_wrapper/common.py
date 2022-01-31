@@ -127,7 +127,7 @@ class Contract:
             query_res = terra.wasm.contract_query(self.address, query_msg)
             return query_res
         else:
-            raise("Not instantiated yet")
+            raise Exception("Not instantiated yet")
 
     def execute(self, sender: Wallet, execute_msg):
         """
@@ -139,14 +139,14 @@ class Contract:
                 terra, sender, self.address, execute_msg)
             return execute_result
         else:
-            raise("Not instantiated yet")
+            raise Exception("Not instantiated yet")
 
     def instantiate(self, sender: Wallet, contract_id: str, init_msg):
         """
         Instantiates the contract, providing a new address
         """
         if self.address:
-            raise("Already instantiated")
+            raise Exception("Already instantiated")
         else:
             self.address = instantiate_contract(
                 terra, sender, contract_id, init_msg)

@@ -81,6 +81,46 @@ def collect_schemas(contract_path: str) -> List[RootSchema]:
     return res
 
 
+def find_type_in_definitions(definitions: List[SchemaObject], target_type) -> str:
+    """
+    Read through all the defined types of the Json file, and try to find the
+    target type, eg:
+    "Uint128": {
+      "description": "A thin wrapper around u128 that is using strings for JSON encoding/decoding, such that the full u128 range can be used for clients that convert JSON numbers to floats, like JavaScript and jq.\n\n# Examples\n\nUse `from` to create instances of this and `u128` to get the value out:\n\n``` # use cosmwasm_std::Uint128; let a = Uint128::from(123u128); assert_eq!(a.u128(), 123);\n\nlet b = Uint128::from(42u64); assert_eq!(b.u128(), 42);\n\nlet c = Uint128::from(70u32); assert_eq!(c.u128(), 70); ```",
+      "type": "string"
+    },
+    """
+    # ref looks like #/definitions/Uint128
+    # we only want Uint128
+    target_type = target_type.split("/")[-1]
+
+    if target_type in definitions:
+        ref_object: SchemaObject = definitions[target_type]
+
+        # We're looking at `Uint128/type`
+        if ref_object.instance_type:
+            type_instance = ref_object.instance_type
+
+            # Map to python type (string -> str)
+            if type_instance in simple_types:
+                type_instance = simple_types[type_instance]
+                return type_instance
+            else:
+                # It happens that some types could be like
+                # "allOf": [
+                #     {
+                #       "$ref": "#/definitions/Uint64"
+                #     }
+                #   ]
+                # TODO: recursive definition exploring
+                # For now just return None
+                pass
+        else:
+            pass
+
+    return None
+
+
 def build(contract_name: str, contract_path: str) -> None:
     classes = []
     defined_types = []  # [{'Uint128': 'str'}]
@@ -202,7 +242,10 @@ def build(contract_name: str, contract_path: str) -> None:
                             else:
                                 pass  # TODO
                         else:
-                            pass  # TODO
+                            if "$ref" in func_schema.properties[prop_key]:
+                                ref = func_schema.properties[prop_key]['$ref']
+                                type_instance = find_type_in_definitions(
+                                    root_schema.definitions, ref)
 
                         # Add the parameter to the InstantiateMsg function holder
                         function_holder.add_param(ParamHolder(

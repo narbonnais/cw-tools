@@ -147,6 +147,9 @@ def build(contract_name: str, contract_path: str) -> None:
             function_holder = FunctionHolder(func_name)
 
             # Go through all properties like `{'claim': {'type': 'object'}}`
+            if not root_schema.schema.properties:
+                # TODO: Handle migrate msg...
+                continue
             for prop_key in root_schema.schema.properties:
 
                 # There is a required `"required": ["anchor_token","genesis_time","owner"]`

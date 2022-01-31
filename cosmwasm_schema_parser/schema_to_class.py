@@ -1,149 +1,9 @@
 import json
+from pprint import pprint
 import sys
-
-type_match = {
-    'string': 'str',
-    'integer': 'int',
-    'array': 'list',
-}
-
-
-class Param():
-    def __init__(self, name: str, type: str):
-        self.name = name
-        self.type = type
-        self.required = False
-
-    def to_string(self):
-        return f"({self.name}, {self.type}, {self.required})"
-
-
-class Message():
-    def __init__(self, name: str, prefix: str = None):
-        self.name = name
-        self.params = []
-        self.prefix = prefix
-
-    def add_param(self, param_name: str, param_type: str = None) -> None:
-        if param_type in type_match:
-            param_type = type_match[param_type]
-        else:
-            param_type = None
-        param = Param(param_name, param_type)
-        self.params.append(param)
-        # print(f"Added {param.to_string()} to {self.name}")
-
-    def require_param(self, param_name):
-        for p in self.params:
-            if p.name == param_name:
-                p.required = True
-
-    def compile_params(self) -> str:
-        # sort params first
-        sorted_params = sorted(self.params, key=lambda p: not p.required)
-
-        res = ""
-        for p in sorted_params:
-            # Get data from param
-            name = p.name
-            type = p.type
-            required = p.required
-            # Create string
-            res += name
-            if type:
-                res += f": {type}"
-            if not required:
-                res += " = None"
-            res += ", "
-        # Strip the last ", "
-        res = res.strip(", ")
-        return res
-
-    def compile_body(self) -> str:
-        res = "return "
-        if self.name == "instantiate":
-            res += "{"
-        else:
-            res += "{'" + self.name + "': {"
-        for p in self.params:
-            name = p.name
-            # Create string
-            res += f"'{name}': {name}, "
-        res = res.strip(", ")
-        if self.name == "instantiate":
-            res += "}"
-        else:
-            res += "}}"
-        return res
-
-    def compile(self) -> str:
-        params = self.compile_params()
-        body = self.compile_body()
-        prefix = ""
-        if self.prefix:
-            prefix = self.prefix + "_"
-        res = f"\tdef {prefix}{self.name}_msg({params}):\n"
-        res += f"\t\t{body}\n"
-
-        return res
-
-
-# msg = Message("execute_vesting_account")
-# msg.add_param("address", "str")
-# msg.add_param("address", "str")
-
-def process_schema(schema, prefix: str):
-    """
-    Takes the json schema as input and returns the string that has to be written in the contract file
-    """
-    if "anyOf" not in schema and "oneOf" not in schema:
-        # It's an instantiate message
-        buffer_msg = Message("instantiate")
-        if "properties" in schema:
-            optional_props = schema["properties"]
-            for prop_name in optional_props:
-                prop_type = None
-                if "type" in optional_props[prop_name]:
-                    prop_type = optional_props[prop_name]["type"]
-                    if type(prop_type) == str:
-                        pass
-                    else:
-                        prop_type = prop_type[0]
-                buffer_msg.add_param(prop_name, prop_type)
-            if "required" in schema:
-                required_props = schema["required"]
-                for prop_name in required_props:
-                    buffer_msg.require_param(prop_name)
-        print(buffer_msg.compile())
-    else:
-        msg_list = None
-        if "anyOf" in schema:
-            msg_list = schema["anyOf"]
-        elif "oneOf" in schema:
-            msg_list = schema["oneOf"]
-        else:
-            return
-
-        for msg in msg_list:
-            msg_name = msg["required"][0]
-            buffer_msg = Message(msg_name, prefix)
-            msg_prop = msg["properties"][msg_name]
-            if "properties" in msg_prop:
-                optional_props = msg_prop["properties"]
-                for prop_name in optional_props:
-                    prop_type = None
-                    if "type" in optional_props[prop_name]:
-                        prop_type = optional_props[prop_name]["type"]
-                        if type(prop_type) == str:
-                            pass
-                        else:
-                            prop_type = prop_type[0]
-                    buffer_msg.add_param(prop_name, prop_type)
-                if "required" in msg_prop:
-                    required_props = msg_prop["required"]
-                    for prop_name in required_props:
-                        buffer_msg.require_param(prop_name)
-            print(buffer_msg.compile())
+from typing import Dict, List, Set
+import os
+from holders import ClassHolder, ParamHolder, FunctionHolder
 
 
 def get_json_data(path: str) -> json:
@@ -153,20 +13,10 @@ def get_json_data(path: str) -> json:
         return json_data
 
 
-def make_class_header(name: str) -> str:
-    class_name = name.title()
-    class_header = f"class {name.title()}(Contract):\n"
-    return class_header
-
-
-def make_class_init(name: str) -> str:
-    class_init = ""
-    class_init += f"\tdef __init__(self, name='{name.title()}'):\n"
-    class_init += f"\t\tsuper().__init__()\n"
-    return class_init
-
-
-def main():
+def process_arguments(argv: list) -> str:
+    """
+    Extract `path` argument from the console or exit
+    """
     if len(sys.argv) < 2:
         print("usage: python3 schema_to_class.py ./terraswap/contracts/terraswap_token")
         print("commands list: python3 schema_to_class.py -h")
@@ -181,32 +31,297 @@ def main():
         print("commands list: python3 schema_to_class.py -h")
         exit()
 
-    _name = path.split("/")
+    return path
 
-    _index_of_contract = _name.index("contracts")
-    _index_of_name = _index_of_contract + 1
 
-    name = _name[_index_of_name]
+def extract_name_from_path(contract_path: str) -> str:
+    """
+    Extract the name of the contract by splitting `/`. Assumes that contracts are located
+    in a `contracts` folder
+    """
+    contract_path = contract_path.split("/")
 
-    print(make_class_header(name))
-    print("\t# This has been generated automatically :)\n")
-    print(make_class_init(name))
+    index_of_contract = contract_path.index("contracts")
+    index_of_name = index_of_contract + 1
 
-    input_schema = f"{path}/schema/instantiate_msg.json"
-    json_schema = get_json_data(input_schema)
-    process_schema(json_schema, "instantiate")
-    input_schema = f"{path}/schema/execute_msg.json"
-    json_schema = get_json_data(input_schema)
-    process_schema(json_schema, "execute")
-    input_schema = f"{path}/schema/query_msg.json"
-    json_schema = get_json_data(input_schema)
-    process_schema(json_schema, "query")
-    try:
-        input_schema = f"{path}/schema/cw20_hook_msg.json"
-        json_schema = get_json_data(input_schema)
-        process_schema(json_schema, "cw20")
-    except:
-        pass
+    return contract_path[index_of_name]
+
+
+simple_types = {"array": "list",
+                "boolean": "bool",
+                "integer": "int",
+                "null": "None",
+                "number": "float",
+                "object": "dict",
+                "string": "str"}
+
+
+class Metadata():
+    id: str = None
+    title: str = None
+    description: str = None
+    default = None
+    deprecated: bool = None
+    read_only: bool = None
+    write_only: bool = None
+    examples: list = None
+
+    def __init__(self, schema_data) -> None:
+        if '$id' in schema_data:
+            self.id = schema_data['$id']
+        if 'title' in schema_data:
+            self.title = schema_data['title']
+        if 'description' in schema_data:
+            # usually for definitions
+            self.description = schema_data['description']
+        if 'default' in schema_data:
+            self.default = schema_data['default']
+        if 'deprecated' in schema_data:
+            self.deprecated = schema_data['deprecated']
+        if 'readOnly' in schema_data:
+            self.read_only = schema_data['readOnly']
+        if 'writeOnly' in schema_data:
+            self.write_only = schema_data['writeOnly']
+        if 'examples' in schema_data:
+            self.examples = schema_data['examples']
+
+
+class SchemaObject():
+    metadata: Metadata
+    instance_type = None
+    format = None
+    enum_values = None
+    const_values = None
+    ref = None
+    items: List = None  # List[SchemaObject]
+    required = None  # Set(str)
+    properties = None  # Dic[str, SchemaObject]
+    any_of = None  # List[SchemaObject]
+    one_of = None  # List[SchemaObject]
+
+    def __init__(self, schema_data) -> None:
+        # pprint(schema_data)
+        self.metadata = Metadata(schema_data)
+        if 'type' in schema_data:
+            self.instance_type = schema_data['type']
+        if '$ref' in schema_data:
+            self.ref = schema_data['$ref']
+        if 'format' in schema_data:
+            self.format = schema_data['format']
+        if 'enum' in schema_data:
+            self.enum_values = schema_data['enum']
+        if 'const' in schema_data:
+            self.const_values = schema_data['const']
+        if 'items' in schema_data:
+            self.items = schema_data['items']
+        if 'required' in schema_data:
+            self.required = schema_data['required']
+        if 'properties' in schema_data:
+            self.properties = schema_data['properties']
+        if 'anyOf' in schema_data:
+            any_of_datas = schema_data['anyOf']
+            self.any_of = []
+            for any_of_data in any_of_datas:
+                self.any_of.append(SchemaObject(any_of_data))
+        if 'oneOf' in schema_data:
+            one_of_datas = schema_data['oneOf']
+            self.one_of = []
+            for one_of_data in one_of_datas:
+                self.one_of.append(SchemaObject(one_of_data))
+
+
+class RootSchema():
+    """
+    https://docs.rs/schemars/latest/schemars/schema/struct.RootSchema.html
+    """
+    meta_schema: str = None
+    schema: SchemaObject = None
+    definitions: Dict[str, SchemaObject] = None
+
+    def __init__(self, root_data: dict) -> None:
+        if '$schema' in root_data:
+            self.meta_schema = root_data['$schema']
+        if 'definitions' in root_data:
+            self.definitions = dict()
+            definitions_data = root_data['definitions']
+            for k in definitions_data:
+                schema_data = definitions_data[k]
+                # May be a boolean ? Never came across this
+                self.definitions[k] = SchemaObject(schema_data)
+        self.schema = SchemaObject(root_data)
+
+    def getName(self):
+        return self.schema.properties.title
+
+
+def collect_schemas(contract_path: str) -> List[RootSchema]:
+    """
+    Goes into `contract_path` directory, list the messages (only) schemas,
+    and returns the schemas in a list
+    :param contract_path: path of the contract directory, father of the `/schema/` dir
+    """
+    res = []
+    schema_directory_path = f"{contract_path}/schema/"
+    for schema_path in os.listdir(schema_directory_path):
+        # We don't use the Response res
+        if not schema_path.endswith("msg.json"):
+            continue
+
+        schema_path = os.path.join(schema_directory_path, schema_path)
+
+        # Extract JSON data and process the schema
+        root_data = get_json_data(schema_path)
+        res.append(root_data)
+    return res
+
+
+def build(contract_name: str, contract_path: str) -> None:
+    classes = []
+    defined_types = []  # [{'Uint128': 'str'}]
+    root_schemas_data = collect_schemas(contract_path)
+    class_holder = ClassHolder(contract_name.capitalize())
+
+    # Go through each JSON msg data
+    for root_schema_data in root_schemas_data:
+
+        # Parse into RootSchema format
+        root_schema = RootSchema(root_schema_data)
+
+        # The class object holding all messages constructors
+        # Compiled to string at the end of the script
+
+        # If instance is `object`, it is an InstantiateMsg
+        if root_schema.schema.instance_type == "object":
+
+            # We want to call it like `Contract.InstantiateMsg()` so we need a function
+            func_name = root_schema.schema.metadata.title
+            if func_name == "InstantiateMsg":
+                func_name = "instantiate"
+
+            function_holder = FunctionHolder(func_name)
+
+            # Go through all properties like `{'claim': {'type': 'object'}}`
+            for prop_key in root_schema.schema.properties:
+
+                # There is a required `"required": ["anchor_token","genesis_time","owner"]`
+                # at the root of the schema, we check inclusion
+                required = False
+                if root_schema.schema.required:
+                    required = prop_key in root_schema.schema.required
+
+                # Get the type of the prop, and map it to a python type
+                # ex: integer -> int, string -> str
+                type_instance = None
+                if "type" in root_schema.schema.properties[prop_key]:
+                    type_instance = root_schema.schema.properties[prop_key]["type"]
+
+                    # Sometimes they could be a type like [str, null], we take the first one
+                    if type(type_instance) == list:
+                        type_instance = type_instance[0]
+
+                    # Map to python type
+                    if type_instance in simple_types:
+                        type_instance = simple_types[type_instance]
+                    else:
+                        pass  # TODO
+                else:
+                    pass  # TODO
+
+                # Add the parameter to the InstantiateMsg function holder
+                function_holder.add_param(ParamHolder(
+                    prop_key, type_instance, required))
+
+            # Add the function holder to the class holder
+            class_holder.add_function(function_holder)
+
+        # Else, it is a ExecuteMsg or QueryMsg
+        else:
+
+            # Get the prefix (execute or query)
+            prefix = root_schema.schema.metadata.title
+            if prefix == "ExecuteMsg":
+                prefix = "execute"
+            elif prefix == "QueryMsg":
+                prefix = "query"
+            elif prefix == "Cw20HookMsg":
+                prefix = "cw20"
+
+            # Messages are pretty deep in the object:
+            # ./oneOf/{message index}/properties/{message definition}
+
+            schema_object: SchemaObject
+            schema_list = []
+            if root_schema.schema.any_of:
+                for s in root_schema.schema.any_of:
+                    schema_list.append(s)
+            if root_schema.schema.one_of:
+                for s in root_schema.schema.one_of:
+                    schema_list.append(s)
+            for schema_object in schema_list:
+                # ./oneOf/{message index}
+
+                for func_name in schema_object.properties:
+                    func_schema = SchemaObject(
+                        schema_object.properties[func_name])
+
+                    # We want to call it like `Contract.InstantiateMsg()` so we need a function
+                    function_holder = FunctionHolder(func_name, prefix, True)
+
+                    # Go through all properties like `{'claim': {'type': 'object'}}`
+                    # Sometimes it could just be `{'claim': {}}`
+                    if func_schema.properties == None:
+                        continue
+                    for prop_key in func_schema.properties:
+
+                        # There is a required `"required": ["anchor_token","genesis_time","owner"]`
+                        # at the root of the schema, we check inclusion
+                        required = False
+                        if func_schema.required:
+                            required = prop_key in func_schema.required
+
+                        # Get the type of the prop, and map it to a python type
+                        # ex: integer -> int, string -> str
+                        # Sometimes it may be a ref to a definition `{'$ref': '#/definitions/Uint128'}`
+                        type_instance = None
+                        if "type" in func_schema.properties[prop_key]:
+                            type_instance = func_schema.properties[prop_key]["type"]
+
+                            # Sometimes they could be a type like [str, null], we take the first one
+                            if type(type_instance) == list:
+                                type_instance = type_instance[0]
+
+                            # Map to python type
+                            if type_instance in simple_types:
+                                type_instance = simple_types[type_instance]
+                            else:
+                                pass  # TODO
+                        else:
+                            pass  # TODO
+
+                        # Add the parameter to the InstantiateMsg function holder
+                        function_holder.add_param(ParamHolder(
+                            prop_key, type_instance, required))
+
+                        # lines = function_holder.build_lines()
+                        # print("\n".join(lines))
+
+                # Add the function holder to the class holder
+                class_holder.add_function(function_holder)
+    # Compile the class holder to string
+    lines = class_holder.build_lines()
+    print("\n".join(lines))
+
+
+def main():
+    """
+    # Entry function
+    Expects the program to receive 1 argument, specifying the directory to handle.
+    """
+
+    contract_path = process_arguments(sys.argv)
+    contract_name = extract_name_from_path(contract_path)
+
+    build(contract_name, contract_path)
 
 
 if __name__ == "__main__":

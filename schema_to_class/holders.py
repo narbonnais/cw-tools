@@ -40,8 +40,8 @@ class FunctionHolder():
         self.params.append(param)
 
     def build_args(self):
-        # args = ", \n\t\t\t".join([p.as_arg() for p in self.params])
-        args = ", ".join([p.as_arg() for p in self.params])
+        sorted_params = sorted(self.params, key=lambda p: not p.required)
+        args = ", ".join([p.as_arg() for p in sorted_params])
         return args
 
     def build_body(self):

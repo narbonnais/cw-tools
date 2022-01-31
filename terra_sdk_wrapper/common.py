@@ -1,3 +1,17 @@
+"""
+This loads LocalTerra(), define a few utilities:
+- execute
+- send
+- store_contract
+- instantiate
+- to_binary
+
+It also provides a Contract interface to handle all messages for you:
+- instantiate
+- execute
+- query
+"""
+
 #============================ Imports ============================#
 
 from terra_sdk.client.localterra import LocalTerra, LCDClient
@@ -90,3 +104,50 @@ def send(terra: LCDClient, sender: Wallet, to_address: str, amount=None) -> str:
 
 def to_binary(o: dict):
     return base64.b64encode(json.dumps(o).encode()).decode()
+
+#============================ Contract Wrapper ============================#
+
+
+class Contract:
+    """
+    I'm a wrapper around every contract messages.
+    After instantiation, I receive an address `self.address`
+    """
+
+    def __init__(self, name: str = "contract") -> None:
+        self.name = name
+        self.address = None
+
+    def query(self, query_msg):
+        """
+        Query a message on the contract.
+        Nees to be instantiated first.
+        """
+        if self.address:
+            query_res = terra.wasm.contract_query(self.address, query_msg)
+            return query_res
+        else:
+            raise("Not instantiated yet")
+
+    def execute(self, sender: Wallet, execute_msg):
+        """
+        Execute a message on the contract
+        Nees to be instantiated first.
+        """
+        if self.address:
+            execute_result = execute_contract(
+                terra, sender, self.address, execute_msg)
+            return execute_result
+        else:
+            raise("Not instantiated yet")
+
+    def instantiate(self, sender: Wallet, contract_id: str, init_msg):
+        """
+        Instantiates the contract, providing a new address
+        """
+        if self.address:
+            raise("Already instantiated")
+        else:
+            self.address = instantiate_contract(
+                terra, sender, contract_id, init_msg)
+            return self.address

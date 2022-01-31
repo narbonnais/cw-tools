@@ -17,41 +17,62 @@ python3 schema_to_class/schema_to_class.py contracts/airdrop
 Result looks like this:
 
 ```py
-class Airdrop():
+class Terraswap_token():
 
-        def execute_update_config(owner: str = None):
-                return {'update_config': {'owner': owner}}
+        def execute_transfer(amount: str, recipient: str):
+                return {'transfer': {'amount': amount, 'recipient': recipient}}
 
-        def execute_register_merkle_root(merkle_root: str):
-                return {'register_merkle_root': {'merkle_root': merkle_root}}
+        def execute_burn(amount: str):
+                return {'burn': {'amount': amount}}
 
-        def execute_claim(amount, proof: list, stage: int):
-                return {'claim': {'amount': amount, 'proof': proof, 'stage': stage}}
+        def execute_send(amount: str, contract: str, msg: str):
+                return {'send': {'amount': amount, 'contract': contract, 'msg': msg}}
 
-        def execute_withdraw(amount, recipient: str):
-                return {'withdraw': {'amount': amount, 'recipient': recipient}}
+        def execute_mint(amount: str, recipient: str):
+                return {'mint': {'amount': amount, 'recipient': recipient}}
 
-        def instantiate(anchor_token: str, gov_contract: str, owner: str):
-                return {'anchor_token': anchor_token, 'gov_contract': gov_contract, 'owner': owner}
+        def execute_increase_allowance(amount: str, spender: str, expires = None):
+                return {'increase_allowance': {'amount': amount, 'expires': expires, 'spender': spender}}
 
-        def query_config():
-                return {'config': {}}
+        def execute_decrease_allowance(amount: str, spender: str, expires = None):
+                return {'decrease_allowance': {'amount': amount, 'expires': expires, 'spender': spender}}
 
-        def query_merkle_root(stage: int):
-                return {'merkle_root': {'stage': stage}}
+        def execute_transfer_from(amount: str, owner: str, recipient: str):
+                return {'transfer_from': {'amount': amount, 'owner': owner, 'recipient': recipient}}
 
-        def query_latest_stage():
-                return {'latest_stage': {}}
+        def execute_send_from(amount: str, contract: str, msg: str, owner: str):
+                return {'send_from': {'amount': amount, 'contract': contract, 'msg': msg, 'owner': owner}}
 
-        def query_is_claimed(address: str, stage: int):
-                return {'is_claimed': {'address': address, 'stage': stage}}
+        def execute_burn_from(amount: str, owner: str):
+                return {'burn_from': {'amount': amount, 'owner': owner}}
+
+        def instantiate(decimals: int, initial_balances: list, name: str, symbol: str, mint = None):
+                return {'decimals': decimals, 'initial_balances': initial_balances, 'mint': mint, 'name': name, 'symbol': symbol}
+
+        def query_balance(address: str):
+                return {'balance': {'address': address}}
+
+        def query_token_info():
+                return {'token_info': {}}
+
+        def query_minter():
+                return {'minter': {}}
+
+        def query_allowance(owner: str, spender: str):
+                return {'allowance': {'owner': owner, 'spender': spender}}
+
+        def query_all_allowances(owner: str, limit: int = None, start_after: str = None):
+                return {'all_allowances': {'limit': limit, 'owner': owner, 'start_after': start_after}}
+
+        def query_all_accounts(limit: int = None, start_after: str = None):
+                return {'all_accounts': {'limit': limit, 'start_after': start_after}}
 ```
 
 Import and play:
 
 ```python
 from terra_sdk_wrapper import Contract, terra, store_contract
-from airdrop import Airdrop
+from terraswap_token import Terraswap_token
 
 terra = LocalTerra()
 

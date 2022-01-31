@@ -70,6 +70,7 @@ terraswap_token_contract = Contract()
 # Instantiate
 instantiate_msg =  Terraswap_token.instantiate(6, [], "anchor", "ANC", {'minter': deployer.key.acc_address})
 terraswap_token_contract.instantiate(alice, terraswap_token_code_id, instantiate_msg)
+# Contract has now an address: terraswap_token_contract.address = "terra..."
 
 # Mint some
 execute_msg = Terraswap_token.execute_mint("1000", bob.key.acc_address)

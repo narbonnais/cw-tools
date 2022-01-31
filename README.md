@@ -11,7 +11,7 @@ This repository holds my tools that help me work on CosmWasm and Terra blockchai
 Use `schema_to_class` to get the python interface of a contract:
 
 ```sh
-python3 schema_to_class/schema_to_class.py contracts/airdrop
+python3 schema_to_class/schema_to_class.py contracts/terraswap_token
 ```
 
 Result looks like this:

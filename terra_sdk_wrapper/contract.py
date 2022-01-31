@@ -10,15 +10,15 @@ class Contract:
         self.terra = terra
 
     def query(self, query_msg):
-        query_res = terra.wasm.contract_query(self.address, query_msg)
+        query_res = self.terra.wasm.contract_query(self.address, query_msg)
         return query_res
 
     def execute(self, sender: Wallet, execute_msg):
         execute_result = execute_contract(
-            terra, sender, self.address, execute_msg)
+            self.terra, sender, self.address, execute_msg)
         return execute_result
 
     def instantiate(self, sender: Wallet, contract_id: str, init_msg):
         self.address = instantiate_contract(
-            terra, sender, contract_id, init_msg)
+            self.terra, sender, contract_id, init_msg)
         return self.address

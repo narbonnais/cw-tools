@@ -74,13 +74,9 @@ Import and play:
 from terra_sdk_wrapper import Contract, terra, store_contract
 from terraswap_token import Terraswap_token
 
-terra = LocalTerra()
-
 # Tests wallets from LocalTerra
 deployer = terra.wallets['test1']
 alice = terra.wallets['test2']
-
-# [...]
 
 # Upload ../artifact/terraswap_token to the blockchain
 terraswap_token_code_id = store_contract(terra, deployer, 'terraswap_token')

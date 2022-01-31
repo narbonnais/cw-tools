@@ -1,5 +1,4 @@
 from terra_sdk_wrapper.common_sdk import execute_contract, instantiate_contract
-
 from terra_sdk.client.localterra import LCDClient
 from terra_sdk.client.localterra import Wallet
 
@@ -7,7 +6,7 @@ from terra_sdk.client.localterra import Wallet
 class Contract:
     def __init__(self, terra: LCDClient, name: str = "contract") -> None:
         self.name = name
-        self.terra = terra
+        self.terra: LCDClient = terra
 
     def query(self, query_msg):
         query_res = self.terra.wasm.contract_query(self.address, query_msg)

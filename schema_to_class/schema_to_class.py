@@ -38,17 +38,47 @@ def process_arguments(argv: list) -> str:
     return path
 
 
-def extract_name_from_path(contract_path: str) -> str:
+def extract_name_from_path(path: str) -> str:
     """
     Extract the name of the contract by splitting `/`. Assumes that contracts are located
     in a `contracts` folder
     """
-    contract_path = contract_path.split("/")
 
-    index_of_contract = contract_path.index("contracts")
-    index_of_name = index_of_contract + 1
+    name = "PLACEHOLDER"
+    if "contracts" in path:
+        path = path.split("/")
+        index_of_contract = path.index("contracts")
+        index_of_name = index_of_contract + 1
+        name = path[index_of_name]
+    else:
+        # Get name of directory
+        full_path = os.path.join(os.getcwd(), path)
+        name = os.path.dirname(full_path).split("/")[-1]
 
-    return contract_path[index_of_name]
+    # remove bad characters
+    name = name.replace(" ", "_")
+    name = name.replace("-", "_")
+
+    # Little algo to remove _ and capitalize every
+    # word wollowing one _
+    new_name = ""
+    try:
+        new_name = name[0].capitalize()
+        last_c = name[0]
+        for c in name[1:]:
+            if c == "_":
+                last_c = c
+                continue
+            if last_c == "_":
+                new_name += c.capitalize()
+                last_c = c
+            else:
+                new_name += c
+
+    except:
+        new_name = name
+
+    return new_name
 
 
 simple_types = {"array": "list",

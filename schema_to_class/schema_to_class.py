@@ -155,7 +155,7 @@ def build(contract_name: str, contract_path: str) -> None:
     classes = []
     defined_types = []  # [{'Uint128': 'str'}]
     root_schemas_data = collect_schemas(contract_path)
-    class_holder = ClassHolder(contract_name.capitalize())
+    class_holder = ClassHolder(contract_name)
 
     # Go through each JSON msg data
     for root_schema_data in root_schemas_data:

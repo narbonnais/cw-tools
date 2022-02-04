@@ -38,7 +38,7 @@ terra = LocalTerra()
 
 def store_contract(terra: LCDClient, sender: Wallet, wasm_path: str) -> str:
     """Uploads contract, returns code ID"""
-    contract_bytes = read_file_as_b64(wasm_path")
+    contract_bytes = read_file_as_b64(wasm_path)
     # Don't forget `.key.acc_address``
     store_code = MsgStoreCode(
         sender=sender.key.acc_address, wasm_byte_code=contract_bytes)

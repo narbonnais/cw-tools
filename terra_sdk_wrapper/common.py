@@ -36,9 +36,9 @@ terra = LocalTerra()
 #============================ SDK wrappers ============================#
 
 
-def store_contract(terra: LCDClient, sender: Wallet, contract_name: str) -> str:
+def store_contract(terra: LCDClient, sender: Wallet, wasm_path: str) -> str:
     """Uploads contract, returns code ID"""
-    contract_bytes = read_file_as_b64(f"../artifacts/{contract_name}.wasm")
+    contract_bytes = read_file_as_b64(wasm_path")
     # Don't forget `.key.acc_address``
     store_code = MsgStoreCode(
         sender=sender.key.acc_address, wasm_byte_code=contract_bytes)
@@ -47,9 +47,9 @@ def store_contract(terra: LCDClient, sender: Wallet, contract_name: str) -> str:
     result = terra.tx.broadcast(tx)
     try:
         code_id = get_code_id(result)
-        print(chalk.green(f"[+] Code ID of {contract_name}: {code_id}"))
+        print(chalk.green(f"[+] Code ID of {wasm_path}: {code_id}"))
     except ValueError as e:
-        print(chalk.red(f"[!] Error storing contract {contract_name}"))
+        print(chalk.red(f"[!] Error storing contract {wasm_path}"))
         print(result)
         raise e
     return code_id

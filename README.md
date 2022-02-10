@@ -1,4 +1,4 @@
-# TerraTools
+# CW tools
 
 This repository holds my tools that help me work on CosmWasm and Terra blockchains.
 

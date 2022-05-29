@@ -18,7 +18,8 @@ from terra_sdk.client.localterra import LocalTerra, LCDClient
 from terra_sdk.client.localterra import Wallet
 from terra_sdk.util.contract import read_file_as_b64, get_code_id
 from terra_sdk.core.wasm import MsgStoreCode
-from terra_sdk.core.auth import StdFee
+from terra_sdk.core.fee import Fee
+from terra_sdk.client.lcd.api.tx import CreateTxOptions
 from terra_sdk.core.wasm import MsgInstantiateContract
 from terra_sdk.util.contract import get_contract_address
 from terra_sdk.core.wasm import MsgExecuteContract
@@ -41,9 +42,15 @@ def store_contract(terra: LCDClient, sender: Wallet, wasm_path: str) -> str:
     contract_bytes = read_file_as_b64(wasm_path)
     # Don't forget `.key.acc_address``
     store_code = MsgStoreCode(
-        sender=sender.key.acc_address, wasm_byte_code=contract_bytes)
+        sender=sender.key.acc_address, 
+        wasm_byte_code=contract_bytes
+    )
     tx = sender.create_and_sign_tx(
-        msgs=[store_code], fee=StdFee(10_000_000, "10000000uluna"))
+        CreateTxOptions(
+            msgs=[store_code],
+            fee=Fee(10_000_000, "10000000uluna")
+        )
+    )
     result = terra.tx.broadcast(tx)
     try:
         code_id = get_code_id(result)
@@ -61,7 +68,11 @@ def instantiate_contract(terra: LCDClient, sender: Wallet, contract_id: str, ini
     instantiate = MsgInstantiateContract(
         sender=sender.key.acc_address, admin=sender.key.acc_address, code_id=contract_id, init_msg=init_msg)
     tx = sender.create_and_sign_tx(
-        msgs=[instantiate], fee=StdFee(10_000_000, "10000000uluna"))
+        CreateTxOptions(
+            msgs=[instantiate],
+            fee=Fee(10_000_000, "10000000uluna")
+        )
+    )
     result = terra.tx.broadcast(tx)
     try:
         contract_address = get_contract_address(result)
@@ -82,7 +93,9 @@ def execute_contract(terra: LCDClient, sender: Wallet, contract_address: str, ex
     #     msgs=[execute], fee=StdFee(10_000_000, "10000000uluna"))
     try:
         tx = sender.create_and_sign_tx(
-            msgs=[execute])
+            CreateTxOptions(
+                msgs=[execute])
+            )
         result = terra.tx.broadcast(tx)
         print(chalk.green(f"[+] Success executing {execute_msg}"))
         return result
@@ -97,7 +110,12 @@ def send(terra: LCDClient, sender: Wallet, to_address: str, amount=None) -> str:
                        to_address=to_address, amount=amount)
     # tx = sender.create_and_sign_tx(msgs=[send_msg], fee=StdFee(
     #     1000000, "1000000uusd"), fee_denoms=['uusd', 'uluna', 'ukrw'])
-    tx = sender.create_and_sign_tx(msgs=[send_msg], gas_adjustment="1.5")
+    tx = sender.create_and_sign_tx(
+        CreateTxOptions(
+            msgs=[send_msg],
+            gas_adjustment="1.5"
+        )
+    )
     result = terra.tx.broadcast(tx)
     return result
 
